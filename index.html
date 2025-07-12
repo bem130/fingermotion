@@ -23,29 +23,28 @@
 <body>
   <video id="video" width="1280" height="720" autoplay muted playsinline></video>
   <canvas id="canvas" width="1280" height="720"></canvas>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.min.js"></script>
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    // カメラ映像取得
-    // 高解像度でカメラ映像を取得
-    navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } })
+    // カメラ映像取得（低解像度化で軽量化）
+    navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 360 } })
       .then(stream => {
         video.srcObject = stream;
       });
 
-    // MediaPipe Handsのセットアップ
+    // MediaPipe Handsのセットアップ（軽量化設定）
     const hands = new Hands({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     });
     hands.setOptions({
       maxNumHands: 2,
-      modelComplexity: 1, // 安定動作重視
-      minDetectionConfidence: 0.9, // 高信頼度のみ
-      minTrackingConfidence: 0.9
+      modelComplexity: 0, // 軽量モデル
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.7 // 少し緩め
     });
 
     hands.onResults(results => {
