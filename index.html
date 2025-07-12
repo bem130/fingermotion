@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>指の動き解析デモ</title>
+  <style>
+    #canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 1;
+    }
+    #video {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 0;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <video id="video" width="1280" height="720" autoplay muted playsinline></video>
+  <canvas id="canvas" width="1280" height="720"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // カメラ映像取得
+    // 高解像度でカメラ映像を取得
+    navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } })
+      .then(stream => {
+        video.srcObject = stream;
+      });
+
+    // MediaPipe Handsのセットアップ
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1, // 安定動作重視
+      minDetectionConfidence: 0.9, // 高信頼度のみ
+      minTrackingConfidence: 0.9
+    });
+
+    hands.onResults(results => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (results.multiHandLandmarks) {
+        for (const landmarks of results.multiHandLandmarks) {
+          window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 2});
+          window.drawLandmarks(ctx, landmarks, {color: '#FF0000', lineWidth: 1});
+        }
+      }
+    });
+
+    // 映像フレームごとにMediaPipe Handsへ送信
+    async function detectHands() {
+      await hands.send({image: video});
+      requestAnimationFrame(detectHands);
+    }
+
+    video.onloadeddata = () => {
+      detectHands();
+    };
+  </script>
+</body>
+</html>
